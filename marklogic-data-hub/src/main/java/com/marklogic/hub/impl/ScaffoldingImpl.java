@@ -118,12 +118,14 @@ public class ScaffoldingImpl implements Scaffolding {
             File moduleFile;
             File libFile;
             String libScaffoldingSrcFile = null;
+
+            final String customModuleRootPath = "scaffolding/custom-step-module/" + stepType.toLowerCase();
             if("sjs".equalsIgnoreCase(format)) {
-                moduleScaffoldingSrcFile = "scaffolding/custom-module/sjs/main-" + stepType.toLowerCase() + ".sjs";
+                moduleScaffoldingSrcFile = customModuleRootPath + "/sjs/main.sjs";
             }
             else if("xqy".equalsIgnoreCase(format)) {
-                moduleScaffoldingSrcFile = "scaffolding/custom-module/xqy/main-" + stepType.toLowerCase() + ".sjs";
-                libScaffoldingSrcFile = "scaffolding/custom-module/xqy/lib-" + stepType.toLowerCase() + ".xqy";
+                moduleScaffoldingSrcFile = customModuleRootPath + "/xqy/main.sjs";
+                libScaffoldingSrcFile = customModuleRootPath + "/xqy/lib.xqy";
             }
             else {
                 throw new RuntimeException("Invalid code format. The allowed formats are 'xqy' or 'sjs'");
