@@ -111,9 +111,6 @@ public class HubTestBase {
     @Autowired
     protected HubConfigImpl adminHubConfig;
 
-    //@Autowired
-    //protected HubConfigImpl hubConfig;
-
     @Autowired
     protected DataHubImpl dataHub;
 
@@ -155,11 +152,6 @@ public class HubTestBase {
 
     @Autowired
     protected JobMonitorImpl jobMonitor;
-
-    // to speedup dev cycle, you can create a hub and set this to true.
-    // for true setup/teardown, must be 'false'
-    private static boolean isInstalled = false;
-    private static int nInstalls = 0;
 
     static final protected Logger logger = LoggerFactory.getLogger(HubTestBase.class);
 
@@ -724,10 +716,6 @@ public class HubTestBase {
         return count;
     }
 
-    protected int getMlMajorVersion() {
-        return Integer.parseInt(versions.getMarkLogicVersion().substring(0, 1));
-    }
-
     protected void clearStagingFinalAndJobDatabases() {
         clearDatabases(HubConfig.DEFAULT_FINAL_NAME, HubConfig.DEFAULT_STAGING_NAME, HubConfig.DEFAULT_JOB_NAME);
     }
@@ -865,44 +853,6 @@ public class HubTestBase {
         }
     }
 
-    protected void uninstallModule(String path) {
-        ServerEvaluationCall eval = stagingClient.newServerEval();
-        String installer =
-            "xdmp:invoke-function(function() {" +
-            "  xdmp:document-delete(\"" + path + "\")" +
-            "}," +
-            "<options xmlns=\"xdmp:eval\">" +
-            "  <database>{xdmp:modules-database()}</database>" +
-            "  <transaction-mode>update-auto-commit</transaction-mode>" +
-            "</options>)";
-
-        eval.xquery(installer).eval();
-        clearFlowCache();
-    }
-
-    protected String genModel(String modelName) {
-        return "{\n" +
-            "  \"info\": {\n" +
-            "    \"title\": \"" + modelName + "\",\n" +
-            "    \"version\": \"0.0.1\",\n" +
-            "    \"baseUri\": \"\",\n" +
-            "    \"description\":\"\"\n" +
-            "  },\n" +
-            "  \"definitions\": {\n" +
-            "    \"" + modelName + "\": {\n" +
-            "      \"properties\": {\n" +
-            "        \"id\": {\n" +
-            "          \"datatype\": \"iri\",\n" +
-            "          \"description\":\"A unique identifier.\"\n" +
-            "        }\n" +
-            "      },\n" +
-            "      \"primaryKey\": \"id\",\n" +
-            "      \"required\": []\n" +
-            "    }\n" +
-            "  }\n" +
-            "}";
-    }
-
     protected void allCombos(ComboListener listener) {
         CodeFormat[] codeFormats = new CodeFormat[] { CodeFormat.JAVASCRIPT, CodeFormat.XQUERY };
         DataFormat[] dataFormats = new DataFormat[] { DataFormat.JSON, DataFormat.XML };
@@ -966,6 +916,13 @@ public class HubTestBase {
         SimpleAppDeployer deployer = new SimpleAppDeployer(((HubConfigImpl)hubConfig).getManageClient(), ((HubConfigImpl)hubConfig).getAdminManager());
         deployer.setCommands(commands);
         deployer.deploy(hubConfig.getAppConfig());
+
+        // Provide some time for entity-model-trigger.xqy, which is post-commit, to complete
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            logger.warn("Unexpected error while trying to sleep: " + e.getMessage(), e);
+        }
     }
 
     protected void installHubArtifacts(HubConfig hubConfig, boolean force) {
@@ -978,13 +935,6 @@ public class HubTestBase {
         SimpleAppDeployer deployer = new SimpleAppDeployer(((HubConfigImpl)hubConfig).getManageClient(), ((HubConfigImpl)hubConfig).getAdminManager());
         deployer.setCommands(commands);
         deployer.deploy(hubConfig.getAppConfig());
-
-        // Provides some time for post-commit triggers to complete
-        try {
-            Thread.sleep(1500);
-        } catch (InterruptedException e) {
-            logger.warn("Unexpected error while trying to sleep: " + e.getMessage(), e);
-        }
     }
 
     protected void generateFunctionMetadata(HubConfig hubConfig) {
@@ -996,13 +946,6 @@ public class HubTestBase {
         SimpleAppDeployer deployer = new SimpleAppDeployer(((HubConfigImpl)hubConfig).getManageClient(), ((HubConfigImpl)hubConfig).getAdminManager());
         deployer.setCommands(commands);
         deployer.deploy(hubConfig.getAppConfig());
-
-        // Provides some time for post-commit triggers to complete
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            logger.warn("Unexpected error while trying to sleep: " + e.getMessage(), e);
-        }
     }
 
     public void clearUserModules() {
